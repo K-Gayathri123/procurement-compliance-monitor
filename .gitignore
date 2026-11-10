@@ -1,0 +1,40 @@
+# Environment and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Database and uploaded files
+data/
+uploads/
+*.db
+*.db-*
+*.sqlite
+*.sqlite-*
+*.sqlite3
+*.sqlite3-*
+
+# Java and Maven
+target/
+*.jar
+*.class
+.mvn/wrapper/maven-wrapper.jar
+
+# Node and React
+node_modules/
+dist/
+.vite/
+coverage/
+
+# IDE and system
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+
+# Archives
+*.zip
