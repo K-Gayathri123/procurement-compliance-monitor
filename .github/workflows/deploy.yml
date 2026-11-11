@@ -34,7 +34,7 @@ jobs:
           cd /home/ubuntu/procurement-compliance-monitor
 
           test -f .env
-          test -f data/procurement_backend.db
+          sudo -n test -f data/procurement_backend.db
           sudo -n docker compose version
 
           if [ -n "$(git status --porcelain)" ]; then
