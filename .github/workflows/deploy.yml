@@ -1,0 +1,83 @@
+name: Procurement CD
+
+on:
+  workflow_run:
+    workflows: ["Procurement CI"]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: procurement-production-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to EC2
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: [self-hosted, linux, x64]
+    timeout-minutes: 45
+
+    env:
+      EXPECTED_SHA: ${{ github.event.workflow_run.head_sha }}
+
+    steps:
+      - name: Verify deployment prerequisites
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd /home/ubuntu/procurement-compliance-monitor
+
+          test -f .env
+          test -f data/procurement_backend.db
+          sudo -n docker compose version
+
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "EC2 repository has local changes. Deployment stopped."
+            exit 1
+          fi
+
+      - name: Update application code
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd /home/ubuntu/procurement-compliance-monitor
+
+          git fetch origin main
+
+          if [ "$(git rev-parse origin/main)" != "$EXPECTED_SHA" ]; then
+            echo "Main has moved since CI passed. Skipping outdated deployment."
+            exit 1
+          fi
+
+          git pull --ff-only origin main
+
+      - name: Build Docker images
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd /home/ubuntu/procurement-compliance-monitor
+          sudo -n docker compose config --quiet
+          sudo -n docker compose build
+
+      - name: Deploy containers
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd /home/ubuntu/procurement-compliance-monitor
+          sudo -n docker compose up -d --no-build
+          sudo -n docker compose ps
+
+      - name: Verify application health
+        shell: bash
+        run: |
+          curl --fail --silent --show-error \
+            --retry 12 \
+            --retry-delay 5 \
+            --retry-all-errors \
+            http://127.0.0.1/api/health
