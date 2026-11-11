@@ -1,0 +1,31 @@
+
+name: procurement-app
+
+services:
+  backend:
+    build:
+      context: ./backend
+    environment:
+      SERVER_PORT: "8080"
+      SERVER_ADDRESS: "0.0.0.0"
+      DATABASE_PATH: /data/procurement_backend.db
+      UPLOAD_DIRECTORY: /data/uploads
+      JWT_SECRET_BASE64: "${JWT_SECRET_BASE64:?JWT secret is required}"
+      SPRING_PROFILES_ACTIVE: "${SPRING_PROFILES_ACTIVE:-default}"
+      BOOTSTRAP_PASSWORD: "${BOOTSTRAP_PASSWORD:-}"
+
+
+      COMPLIANCE_RATE_SOURCE: "${COMPLIANCE_RATE_SOURCE:-}"
+      JAVA_TOOL_OPTIONS: "-Xms128m -Xmx512m"
+    volumes:
+      - ./data:/data
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: unless-stopped

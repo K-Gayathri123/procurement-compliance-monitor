@@ -1,0 +1,10 @@
+target/
+data/
+uploads/
+*.db
+*.sqlite
+*.sqlite3
+.env
+.env.*
+.git/
+*.log
